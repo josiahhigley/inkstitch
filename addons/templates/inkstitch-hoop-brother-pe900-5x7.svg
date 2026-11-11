@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Inkscape document template: stitch area of the Brother PE900 5x7 hoop (130 x 180 mm).
+
+  The page is the stitch area. The rectangle with the inkstitch:hoop attribute is what Ink/Stitch
+  compares the design with when an embroidery file is saved. The hoop layer is locked and it is not
+  stitched (inkstitch:ignore_object).
+-->
+<svg
+   width="130mm"
+   height="180mm"
+   viewBox="0 0 130 180"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkstitch="http://inkstitch.org/namespace">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:current-layer="design"
+     showgrid="false" />
+  <defs
+     id="defs1" />
+  <metadata
+     id="metadata1">
+    <inkstitch:inkstitch_svg_version>4</inkstitch:inkstitch_svg_version>
+  </metadata>
+  <inkscape:_templateinfo>
+    <inkscape:_name>Ink/Stitch: Brother PE900 5x7 hoop</inkscape:_name>
+    <inkscape:author>Ink/Stitch</inkscape:author>
+    <inkscape:_shortdesc>Stitch area of the Brother PE900 5x7 hoop (130 x 180 mm). Ink/Stitch warns when a design which is saved as an embroidery file is outside of it.</inkscape:_shortdesc>
+    <inkscape:date>2026-11-11</inkscape:date>
+    <inkscape:_keywords>embroidery hoop frame stitch area brother pe900 5x7 130x180 inkstitch</inkscape:_keywords>
+  </inkscape:_templateinfo>
+  <g
+     inkscape:groupmode="layer"
+     id="hoop"
+     inkscape:label="Hoop: Brother PE900 5x7 (not stitched)"
+     sodipodi:insensitive="true"
+     inkstitch:ignore_object="true">
+    <rect
+       id="hoop_stitch_area"
+       inkscape:label="Stitch area 130 x 180 mm"
+       inkstitch:hoop="Brother PE900 5x7"
+       x="0"
+       y="0"
+       width="130"
+       height="180"
+       style="fill:none;stroke:#3584e4;stroke-width:0.35;stroke-dasharray:2, 1.2" />
+    <path
+       id="hoop_center"
+       inkscape:label="Center"
+       d="M 60,90 H 70 M 65,85 V 95"
+       style="fill:none;stroke:#3584e4;stroke-width:0.25" />
+    <text
+       id="hoop_label"
+       xml:space="preserve"
+       x="0"
+       y="-2.5"
+       style="font-size:3.5px;font-family:sans-serif;fill:#3584e4;stroke:none">Brother PE900 · 5x7 hoop · stitch area 130 x 180 mm</text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="design"
+     inkscape:label="Design" />
+</svg>
