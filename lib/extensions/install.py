@@ -20,6 +20,7 @@ class Install(InkstitchExtension):
         self.arg_parser.add_argument("--notebook")
         self.arg_parser.add_argument("--install-palettes", type=Boolean, default=False, dest="install_palettes")
         self.arg_parser.add_argument("--install-symbol-libraries", type=Boolean, default=False, dest="install_symbol_libraries")
+        self.arg_parser.add_argument("--install-templates", type=Boolean, default=False, dest="install_templates")
 
         self.inkscape_config_path = guess_inkscape_config_path()
         self.install_resources = get_bundled_dir('addons')
@@ -30,6 +31,8 @@ class Install(InkstitchExtension):
             installation_success.append(self.install_palettes())
         if self.options.install_symbol_libraries:
             installation_success.append(self.install_symbol_libraries())
+        if self.options.install_templates:
+            installation_success.append(self.install_templates())
         if all(installation_success):
             self.install_success_message()
 
@@ -52,6 +55,16 @@ class Install(InkstitchExtension):
             return True
         except IOError as error:
             self.install_error_message(_("Could not install color palettes. Please file an issue on"), error)
+            return False
+
+    def install_templates(self):
+        path = os.path.join(self.inkscape_config_path, 'templates')
+        src_dir = os.path.join(self.install_resources, 'templates')
+        try:
+            copy_files(glob(os.path.join(src_dir, "*")), path)
+            return True
+        except IOError as error:
+            self.install_error_message(_("Could not install hoop templates. Please file an issue on"), error)
             return False
 
     def install_success_message(self):

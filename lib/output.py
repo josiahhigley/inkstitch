@@ -13,6 +13,7 @@ from pystitch.exceptions import TooManyColorChangesError
 import pystitch
 
 from .commands import global_command
+from .hoop import hoop_warning
 from .i18n import _
 from .stitch_plan import Stitch
 from .svg import PIXELS_PER_MM
@@ -50,6 +51,20 @@ def jump_to_stop_point(pattern, svg):
         pattern.add_stitch_absolute(pystitch.JUMP, stop_position.point.x, stop_position.point.y)
 
 
+_warned_about_hoop = False
+
+
+def warn_about_hoop(svg, stitch_plan, rotation=0):
+    """Tell the user if the design doesn't fit into the hoop of the document.  Once is enough if several files are written."""
+    global _warned_about_hoop
+
+    if not _warned_about_hoop:
+        warning = hoop_warning(svg, stitch_plan, rotation)
+        if warning:
+            inkex.errormsg(warning + "\n\n" + _("The embroidery file has been saved nevertheless."))
+            _warned_about_hoop = True
+
+
 def write_embroidery_file(file_path, stitch_plan, svg, settings={}):
     # convert from pixels to millimeters
     # also multiply by 10 to get tenths of a millimeter as required by pystitch
@@ -57,6 +72,8 @@ def write_embroidery_file(file_path, stitch_plan, svg, settings={}):
 
     origin = get_origin(svg, stitch_plan.bounding_box)
     # origin = origin * scale
+
+    warn_about_hoop(svg, stitch_plan, settings.get('rotate', 0))
 
     pattern = pystitch.EmbPattern()
 
