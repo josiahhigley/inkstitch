@@ -308,7 +308,9 @@ def is_command_symbol(node: inkex.BaseElement) -> bool:
     symbol = None
     xlink = node.get(XLINK_HREF, "")
     if xlink.startswith("#inkstitch_"):
-        symbol = node.get(XLINK_HREF)[11:]
+        # Inkscape renames a symbol which gets into the document a second time, for example to inkstitch_trim-5.
+        # This happens when a design with commands is imported or pasted into a design which has commands too.
+        symbol = xlink[11:].split("-")[0]
     return symbol in COMMANDS
 
 
