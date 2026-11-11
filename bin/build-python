@@ -27,6 +27,9 @@ if [ "$PLATFORM" = "osx" ]; then
     pyinstaller_args+="-i images/inkstitch/mac/inkstitch.icns "
     if [[ -z ${GITHUB_REF} ]]; then
         echo "Dev or Local Build"
+    elif [[ -z ${MACOS_CERTIFICATE} ]]; then
+        # Forks don't have access to the signing certificates.
+        echo "No signing certificate available: unsigned build"
     else
         bash bin/import-macos-keys
     fi
