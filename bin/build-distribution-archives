@@ -32,7 +32,7 @@ if [ "$PLATFORM" = "osx" ]; then
     # Notarization for development branches can be forced with this variable set to true
     NOTARIZE_DEVELOPMENT_BUILDS=false
 
-    if [[ ! -z "${GITHUB_REF}" ]]; then
+    if [[ ! -z "${GITHUB_REF}" && ! -z "${MACOS_CERTIFICATE}" ]]; then
         # This code signs and notarize the inkstitch.app
         DEV_IDENT="Developer ID Application: Rhett Allen (LBTQFB2Z4D)"
         echo "Signing of inkstitch.app"
@@ -90,6 +90,9 @@ if [ "$PLATFORM" = "osx" ]; then
         fi
     else
         # local builds will not be signed or notarized
+        # The same goes for GitHub builds without the Apple signing secrets, e.g. in a fork.
+        # The files added above broke the seal of PyInstaller's ad-hoc signature, so renew it.
+        /usr/bin/codesign -s - --deep --force dist/inkstitch.app -v
         pkgbuild --root dist/inkstitch.app \
             --ownership recommended \
             --identifier org.inkstitch.installer \

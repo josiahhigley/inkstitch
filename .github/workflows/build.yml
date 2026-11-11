@@ -1,11 +1,10 @@
+# Fork note: this is upstream's build.yml with three differences.
+#   - It only runs when started by hand (Actions > Build > Run workflow), not on every push.
+#   - Outside of inkstitch/inkstitch only the two macOS jobs run.
+#   - Without the Apple signing secrets the macOS package is ad-hoc signed and not notarized
+#     (see bin/build-python and bin/build-distribution-archives).
 name: Build
 on:
-  push:
-    branches-ignore:
-      - master
-      - main
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
       inputs:
           TEST_SIGNING:
@@ -15,6 +14,7 @@ on:
               default: false
 jobs:
   linux64:
+    if: github.repository == 'inkstitch/inkstitch'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
@@ -78,6 +78,7 @@ jobs:
           name: inkstitch-linux64
           path: artifacts
   linuxarm64:
+    if: github.repository == 'inkstitch/inkstitch'
     runs-on: ubuntu-22.04-arm
     steps:
       - uses: actions/checkout@v6
@@ -140,6 +141,7 @@ jobs:
           name: inkstitch-linuxarm64
           path: artifacts
   windows64:
+    if: github.repository == 'inkstitch/inkstitch'
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
@@ -366,7 +368,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: [linux64, linuxarm64, windows64, macx86, macarm64]
-    if: always()
+    if: always() && github.repository == 'inkstitch/inkstitch'
     steps:
       - name: determine release info
         shell: bash
