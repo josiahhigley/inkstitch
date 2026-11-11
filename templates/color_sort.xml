@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension translationdomain="inkstitch" xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Sort by Color</name>
+    <id>org.{{ id_inkstitch }}.color_sort</id>
+    <param name="extension" type="string" gui-hidden="true">color_sort</param>
+    <effect needs-live-preview="false">
+        <object-type>all</object-type>
+        <menu-tip>Re-stacks objects so that each thread color is stitched in as few runs as possible</menu-tip>
+        <effects-menu>
+            <submenu name="{{ menu_inkstitch }}" translatable="no">
+                <submenu name="Edit" />
+            </submenu>
+        </effects-menu>
+    </effect>
+    <param name="notebook" type="notebook">
+        <page name="options" gui-text="Options">
+            <param name="keep-overlap-order" type="boolean" gui-text="Keep the order of overlapping objects"
+                   gui-description="Objects stitched on top of each other keep their order, so the design still looks the same. Disable to get the fewest thread changes regardless of overlaps.">true</param>
+            <param name="add-trims" type="boolean" gui-text="Trim the thread between distant objects"
+                   gui-description="Objects of the same color which are far apart get a trim in between when they are stitched one after another now. Otherwise the thread would be dragged across the design.">true</param>
+            <param name="selection-only" type="boolean" gui-text="Sort only the selected objects"
+                   gui-description="The whole design is sorted, no matter what is selected. Enable to leave everything which is not selected in place.">false</param>
+        </page>
+        <page name="info" gui-text="Help">
+            <label appearance="header">Sort by Color</label>
+            <label>Re-stacks the objects of the whole design, so that objects with the same thread color are stitched one after another. This reduces thread changes, for example after combining several designs.</label>
+            <spacer />
+            <label>Groups in which everything has the same color are moved in one piece, for example the color blocks of an imported design or lettering in a single color. Other objects are moved out of their groups, and into the layer of the first object when they are spread over several layers. Lettering with several colors can no longer be edited as text after it has been sorted.</label>
+            <spacer />
+            <label>Objects with slightly different colors are not stitched together. Give them the same color first, for example with Thread Color Management > Apply Palette.</label>
+        </page>
+    </param>
+    <script>
+        {{ command_tag | safe }}
+    </script>
+</inkscape-extension>

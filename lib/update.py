@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Authors
 # Licensed under the GNU GPL version 3.0 or later.  See the file LICENSE for details.
 
-from inkex import errormsg
+from inkex import addNS, errormsg
 
 from .commands import add_commands, ensure_symbol
 from .elements import EmbroideryElement, Stroke
@@ -16,6 +16,10 @@ from .svg.tags import (CONNECTION_END, CONNECTION_START, EMBROIDERABLE_TAGS,
 from .utils import Point as InkstitchPoint
 
 INKSTITCH_SVG_VERSION = 4
+
+# The version of a document is saved in its metadata.  Inkscape leaves the metadata behind when the document is imported
+# into an other one, so elements which Ink/Stitch creates for an import are marked with the version themselves.
+ELEMENT_VERSION = addNS('inkstitch_svg_version', 'inkstitch')
 
 
 def update_inkstitch_document(svg, selection=None, warn_unversioned=True):
@@ -49,6 +53,12 @@ def update_inkstitch_document(svg, selection=None, warn_unversioned=True):
             _update_inkstitch_svg_version(svg)
             return
 
+        # Everything Ink/Stitch has to do with comes from embroidery files which have been imported with this version:
+        # there is nothing to update and nothing to ask the user about.
+        if file_version == 0 and selection is None and all(_is_current(node) for node in document.xpath(search_string)):
+            _update_inkstitch_svg_version(svg)
+            return
+
         # update elements
         if selection is not None:
             # the updater extension might want to only update selected elements
@@ -71,7 +81,18 @@ def automatic_version_update(document, file_version, INKSTITCH_SVG_VERSION, warn
     # well then, let's update legeacy params
     # oddly we have to convert this into a list, otherwise a bunch of elements is missing
     for node in list(document.iterdescendants(EMBROIDERABLE_TAGS)):
-        update_legacy_params(document, EmbroideryElement(node), file_version, INKSTITCH_SVG_VERSION)
+        if not _is_current(node):
+            update_legacy_params(document, EmbroideryElement(node), file_version, INKSTITCH_SVG_VERSION)
+
+
+def mark_elements_as_current(document):
+    """Remember that the elements of this document have been created by this version of Ink/Stitch."""
+    for node in document.xpath("//*[@*[namespace-uri()='http://inkstitch.org/namespace']]"):
+        node.set(ELEMENT_VERSION, str(INKSTITCH_SVG_VERSION))
+
+
+def _is_current(node):
+    return node.get(ELEMENT_VERSION) == str(INKSTITCH_SVG_VERSION)
 
 
 def _update_inkstitch_svg_version(svg):

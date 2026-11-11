@@ -12,6 +12,7 @@ from .auto_satin import AutoSatin
 from .batch_lettering import BatchLettering
 from .break_apart import BreakApart
 from .cleanup import Cleanup
+from .color_sort import ColorSort
 from .commands_scale_symbols import CommandsScaleSymbols
 from .cross_stitch_assistant import CrossStitchAssistant
 from .cut_satin import CutSatin
@@ -92,6 +93,7 @@ extensions = [
     BatchLettering,
     BreakApart,
     Cleanup,
+    ColorSort,
     CommandsScaleSymbols,
     CrossStitchAssistant,
     CutSatin,
