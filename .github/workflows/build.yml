@@ -1,8 +1,9 @@
-# Fork note: this is upstream's build.yml with three differences.
+# Fork note: this is upstream's build.yml with four differences.
 #   - It only runs when started by hand (Actions > Build > Run workflow), not on every push.
 #   - Outside of inkstitch/inkstitch only the two macOS jobs run.
 #   - Without the Apple signing secrets the macOS package is ad-hoc signed and not notarized
 #     (see bin/build-python and bin/build-distribution-archives).
+#   - macarm64 runs on macos-15. GitHub retired the macos-14 runners on 2026-11-02.
 name: Build
 on:
   workflow_dispatch:
@@ -302,7 +303,7 @@ jobs:
           name: inkstitch-mac-x86
           path: artifacts
   macarm64:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
