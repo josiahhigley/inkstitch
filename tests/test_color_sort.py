@@ -20,7 +20,7 @@ from lib.stitch_plan import (StitchPlan, generate_stitch_plan,
 from lib.svg.tags import (CONNECTION_END, CONNECTION_START,
                           INKSCAPE_GROUPMODE, INKSTITCH_ATTRIBS,
                           INKSTITCH_LETTERING, SVG_DEFS_TAG, SVG_METADATA_TAG,
-                          SVG_USE_TAG, XLINK_HREF)
+                          SVG_RECT_TAG, SVG_USE_TAG, XLINK_HREF)
 
 Color = Union[str, Tuple[str, str]]
 
@@ -120,12 +120,13 @@ class ColorSortExtensionTest(TestCase):
             "x": str(x), "y": "0", "width": "10", "height": "10", "style": style
         }))
 
-    def _run(self, root, keep_overlap_order: bool = True, add_trims: bool = True) -> str:
+    def _run(self, root, keep_overlap_order: bool = True, add_trims: bool = True, selection_only: bool = False) -> str:
         """Sort the design.  Returns the message for the user."""
         extension = ColorSort()
         extension.parse_arguments([
             f"--keep-overlap-order={str(keep_overlap_order).lower()}",
-            f"--add-trims={str(add_trims).lower()}"
+            f"--add-trims={str(add_trims).lower()}",
+            f"--selection-only={str(selection_only).lower()}"
         ])
         extension.document = root.getroottree()
         extension.svg = root
@@ -235,10 +236,45 @@ class ColorSortExtensionTest(TestCase):
         red3 = self._rect(root, 90, "red")
         root.selection.set(red1, red2, green, red3)
 
-        self._run(root)
+        message = self._run(root, selection_only=True)
 
         # The last red object is stitched earlier now.  The one on top of the blue object can't, because the blue object stays.
         self.assertEqual(objects(root), [red1, red3, green, blue, red2])
+        self.assertIn("Only the selected objects have been sorted.", message)
+
+    def _two_designs_with_a_selection(self) -> SvgDocumentElement:
+        # Inkscape selects a design which has just been imported: here the second one.
+        root: SvgDocumentElement = svg()
+        design1 = root.add(Group())
+        design2 = root.add(Group(attrib={"transform": "translate(0, 100)"}))
+        self._rect(design1, 0, "black")
+        self._rect(design1, 50, "red")
+        self._rect(design2, 0, "green")
+        # lies on top of the green object
+        self._rect(design2, 5, "red")
+        root.selection.set(design2)
+        return root
+
+    def test_sorts_the_whole_design_whatever_is_selected(self) -> None:
+        root = self._two_designs_with_a_selection()
+        black, red1, green, red2 = list(root.iterdescendants(SVG_RECT_TAG))
+
+        message = self._run(root)
+
+        self.assertIn("Thread changes before sorting: 3", message)
+        self.assertIn("Thread changes after sorting: 2", message)
+        self.assertNotIn("selected", message)
+        self.assertEqual(objects(root), [black, green, red1, red2])
+
+    def test_sorting_the_selected_design_alone_saves_nothing(self) -> None:
+        root = self._two_designs_with_a_selection()
+        before = deepcopy(root)
+
+        message = self._run(root, selection_only=True)
+
+        self.assertIn("Thread changes before sorting: 3", message)
+        self.assertIn("Thread changes after sorting: 3", message)
+        self.assertEqual(root.tostring(), before.tostring())
 
     def test_trims_between_distant_objects_of_the_same_color(self) -> None:
         trim_after = INKSTITCH_ATTRIBS['trim_after']

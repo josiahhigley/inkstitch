@@ -251,6 +251,7 @@ class ColorSort(InkstitchExtension):
         self.arg_parser.add_argument("--notebook")
         self.arg_parser.add_argument("--keep-overlap-order", type=Boolean, default=True, dest="keep_overlap_order")
         self.arg_parser.add_argument("--add-trims", type=Boolean, default=True, dest="add_trims")
+        self.arg_parser.add_argument("--selection-only", type=Boolean, default=False, dest="selection_only")
 
     def effect(self) -> None:
         self.tolerance = OVERLAP_TOLERANCE_MM * PIXELS_PER_MM
@@ -294,11 +295,15 @@ class ColorSort(InkstitchExtension):
                     trims = self._add_trims(sorted_nodes + staying[:1])
                 lettering_split = self._restack(block, order, {stitched_node.node for stitched_node in stitched} - block_nodes)
 
-        self._report(changes_before, self._count_thread_changes(self._stitched_nodes()), left_in_place, trims, lettering_split)
+        self._report(changes_before, self._count_thread_changes(self._stitched_nodes()), left_in_place, trims, lettering_split,
+                     selected is not None and len(movable) < len(stitched))
 
-    def _report(self, changes_before: int, changes_after: int, left_in_place: int, trims: int, lettering_split: bool) -> None:
+    def _report(self, changes_before: int, changes_after: int, left_in_place: int, trims: int, lettering_split: bool,
+                only_selection: bool) -> None:
         message = _("Thread changes before sorting: {before}\nThread changes after sorting: {after}").format(
             before=changes_before, after=changes_after)
+        if only_selection:
+            message += "\n\n" + _("Only the selected objects have been sorted.")
         if lettering_split:
             message += "\n\n" + _("Lettering with several colors has been split up. It can no longer be edited as text.")
         if trims:
@@ -318,8 +323,9 @@ class ColorSort(InkstitchExtension):
         return stitched
 
     def _selected_nodes(self) -> Optional[Set[BaseElement]]:
-        if not self.svg.selection:
-            # sort the whole design
+        # Sort the whole design unless the user asks for the selection.  Inkscape selects what has just been imported
+        # or moved, so after combining designs there usually is a selection which nobody thinks of.
+        if not self.options.selection_only or not self.svg.selection:
             return None
         return set(iterate_nodes(self.svg, selection=list(self.svg.selection)))
 
