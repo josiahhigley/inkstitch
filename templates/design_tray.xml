@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension translationdomain="inkstitch" xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Design Tray</name>
+    <id>org.{{ id_inkstitch }}.design_tray</id>
+    <param name="extension" type="string" gui-hidden="true">design_tray</param>
+    <effect needs-live-preview="false">
+        <object-type>all</object-type>
+        <menu-tip>Import purchased embroidery files into this document (PES, DST, JEF, VP3, and more)</menu-tip>
+        <effects-menu>
+            <submenu name="{{ menu_inkstitch }}" translatable="no">
+                <submenu name="File" />
+            </submenu>
+        </effects-menu>
+    </effect>
+    <param name="notebook" type="notebook">
+        <page name="options" gui-text="Import">
+            <param type="path" name="design-files" gui-text="Design files"
+                   gui-description="Select one or more embroidery files. Each file becomes a named group on the canvas."
+                   mode="files" filetypes="pes,dst,jef,vp3,exp,xxx,sew,pec,hus,pcs,pcm,pcd,pcq,shv,10o,100,bro,dat,dsb,dsz,emd,exy,fxy,gt,inb,tbf,ksm,tap,spx,stx,phb,phc,new,max,mit,jpx,stc,zhs,zxy,pmv,gcode,iqp,plt,qcc,u01,svg"/>
+            <param name="import-commands" type="optiongroup" appearance="combo" gui-text="Import commands as"
+                   gui-description="How trim and stop commands from the file are brought into the document.">
+                <option value="symbols">Command symbols</option>
+                <option value="params">Params (trim after / stop after)</option>
+                <option value="none">Ignore commands</option>
+            </param>
+            <param name="center-in-hoop" type="boolean" gui-text="Place at page / hoop center"
+                   gui-description="Each design is centred on the page, staggered slightly so stacked imports are easier to grab.">true</param>
+        </page>
+        <page name="info" gui-text="Help">
+            <label appearance="header">Design Tray</label>
+            <label>Merge purchased designs into the open document without replacing it. Open would start a new file; Design Tray keeps your hoop, lettering, and other designs.</label>
+            <spacer />
+            <label>Supported stitch formats include PES, DST, JEF, VP3, EXP, XXX, SEW, HUS, PEC and the other formats Ink/Stitch can open, plus SVG. Colour-only files (.edr, .col, .inf) are skipped — use Thread Color Management → Apply Threadlist for those.</label>
+            <spacer />
+            <label>After importing: arrange in the Brother PE900 5×7 hoop, run Edit → Color Order to cut thread changes, then Visualize and Export → Prepare for PE900.</label>
+        </page>
+    </param>
+    <script>
+        {{ command_tag | safe }}
+    </script>
+</inkscape-extension>

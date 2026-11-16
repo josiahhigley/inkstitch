@@ -105,6 +105,12 @@ class ColorOrderPanel(wx.Panel):
         )
         self.selection_only_checkbox.Bind(wx.EVT_CHECKBOX, self.on_options_changed)
 
+        self.protect_stops_checkbox = wx.CheckBox(self, label=_("Protect STOP barriers (applique phases)"))
+        self.protect_stops_checkbox.SetValue(True)
+        self.protect_stops_checkbox.SetToolTip(
+            _("Do not drag a colour run across a STOP. Applique placement and tack-down must stay before cover stitches.")
+        )
+
         self.cancel_button = wx.Button(self, wx.ID_ANY, _("Cancel"))
         self.cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
         self.apply_button = wx.Button(self, wx.ID_ANY, _("Apply"))
@@ -132,7 +138,8 @@ class ColorOrderPanel(wx.Panel):
 
         main_sizer.Add(self.keep_overlap_checkbox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         main_sizer.Add(self.add_trims_checkbox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        main_sizer.Add(self.selection_only_checkbox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        main_sizer.Add(self.selection_only_checkbox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        main_sizer.Add(self.protect_stops_checkbox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         buttons_sizer = wx.BoxSizer(wx.HORIZONTAL)
         buttons_sizer.Add(self.cancel_button, 0, wx.RIGHT, 5)
@@ -200,6 +207,9 @@ class ColorOrderPanel(wx.Panel):
             return False
         if not (0 <= from_index < len(self.order) and 0 <= to_index < len(self.order)):
             return False
+        if self.protect_stops_checkbox.GetValue() and self._crosses_stop_barrier(from_index, to_index):
+            self._show_warning(_("Cannot move across a STOP barrier. Applique phases must keep their order."))
+            return False
         item = self.order.pop(from_index)
         self.order.insert(to_index, item)
         self.refresh_list()
@@ -207,6 +217,15 @@ class ColorOrderPanel(wx.Panel):
         self.update_stats()
         self.update_preview()
         return True
+
+    def _crosses_stop_barrier(self, from_index: int, to_index: int) -> bool:
+        """True when the move would reorder across an item that ends with STOP."""
+        low, high = sorted((from_index, to_index))
+        for index in range(low, high):
+            item = self.plan.block[self.order[index]]
+            if item.has_stop:
+                return True
+        return False
 
     def on_begin_drag(self, event) -> None:
         self._dragging_row = event.Index

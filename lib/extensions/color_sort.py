@@ -217,6 +217,15 @@ class SortItem:
         return self.nodes[0].colors[0], self.nodes[-1].colors[-1]
 
     @property
+    def has_stop(self) -> bool:
+        """True when this piece ends with a machine stop (applique phase barrier)."""
+        for stitched_node in self.nodes:
+            for element in stitched_node.elements:
+                if getattr(element, "stop_after", False) or element.has_command("stop"):
+                    return True
+        return False
+
+    @property
     def label(self) -> str:
         name = self.root.get(INKSCAPE_LABEL) or self.root.get('id')
         first, last = self.colors
@@ -224,6 +233,8 @@ class SortItem:
             color_text = color_to_hex(first)
         else:
             color_text = f"{color_to_hex(first)} → {color_to_hex(last)}"
+        if self.has_stop:
+            color_text = f"{color_text} · STOP"
         if name:
             return f"{name} ({color_text})"
         return color_text

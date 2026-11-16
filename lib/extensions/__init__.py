@@ -18,6 +18,7 @@ from .cross_stitch_assistant import CrossStitchAssistant
 from .cut_satin import CutSatin
 from .cutwork_segmentation import CutworkSegmentation
 from .density_map import DensityMap
+from .design_tray import DesignTray
 from .display_stacking_order import DisplayStackingOrder
 from .duplicate_params import DuplicateParams
 from .element_info import ElementInfo
@@ -48,6 +49,7 @@ from .lettering_svg_font_to_layers import LetteringSvgFontToLayers
 from .letters_to_font import LettersToFont
 from .object_commands import ObjectCommands
 from .object_commands_toggle_visibility import ObjectCommandsToggleVisibility
+from .objects_pane import ObjectsPane
 from .outline import Outline
 from .output import Output
 from .palette_split_text import PaletteSplitText
@@ -56,6 +58,7 @@ from .params import Params
 from .png_realistic import PngRealistic
 from .png_simple import PngSimple
 from .preferences import Preferences
+from .prepare_pe900 import PreparePe900
 from .print_pdf import Print
 from .redwork import Redwork
 from .remove_duplicated_points import RemoveDuplicatedPoints
@@ -99,6 +102,7 @@ extensions = [
     CutSatin,
     CutworkSegmentation,
     DensityMap,
+    DesignTray,
     DisplayStackingOrder,
     DuplicateParams,
     ElementInfo,
@@ -129,6 +133,7 @@ extensions = [
     LettersToFont,
     ObjectCommands,
     ObjectCommandsToggleVisibility,
+    ObjectsPane,
     Outline,
     Output,
     PaletteSplitText,
@@ -137,6 +142,7 @@ extensions = [
     PngRealistic,
     PngSimple,
     Preferences,
+    PreparePe900,
     Print,
     Redwork,
     RemoveDuplicatedPoints,
