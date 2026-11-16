@@ -132,7 +132,7 @@ class ColorSortExtensionTest(TestCase):
         extension.svg = root
         message = StringIO()
         with redirect_stderr(message):
-            extension.effect()
+            extension.apply_sort()
         return message.getvalue()
 
     def test_sorts_across_groups(self) -> None:
@@ -416,7 +416,7 @@ class ColorSortImportedDesignsTest(TestCase):
         before = self._stitch_plan(extension)
         self.assertEqual(len(before), 7)
 
-        extension.effect()
+        extension.apply_sort()
 
         # the color blocks of the imported designs are still groups, in their new order
         self.assertEqual(list(layer), [color_blocks1[0], color_blocks2[0], color_blocks1[1], color_blocks2[1],

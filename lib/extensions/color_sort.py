@@ -9,6 +9,8 @@ from time import monotonic
 from typing import (Dict, Hashable, Iterator, List, Optional, Sequence, Set,
                     Tuple, cast)
 
+from dataclasses import dataclass
+
 from inkex import BaseElement, Boolean, errormsg
 from shapely import STRtree, box, distance, dwithin, make_valid
 from shapely.errors import GEOSException, UnsupportedGEOSVersionError
@@ -21,7 +23,7 @@ from ..elements import (Clone, EmbroideryElement, FillStitch, SatinColumn,
                         Stroke, iterate_nodes, node_to_elements)
 from ..i18n import _
 from ..svg import PIXELS_PER_MM, get_node_transform
-from ..svg.tags import (INKSCAPE_GROUPMODE, INKSTITCH_ATTRIBS,
+from ..svg.tags import (INKSCAPE_GROUPMODE, INKSCAPE_LABEL, INKSTITCH_ATTRIBS,
                         INKSTITCH_LETTERING, SVG_GROUP_TAG)
 from ..threads import ThreadColor
 from .base import InkstitchExtension
@@ -193,6 +195,16 @@ class StitchedNode:
         return self._geometry
 
 
+def color_to_hex(color: Hashable) -> str:
+    """Hex string for a color stored as an RGB tuple or any ThreadColor input."""
+    if isinstance(color, tuple) and len(color) == 3:
+        try:
+            return "#%02X%02X%02X" % tuple(int(channel) for channel in color)
+        except (TypeError, ValueError):
+            pass
+    return ThreadColor(color).to_hex_str()
+
+
 class SortItem:
     """What is moved in one piece: a single object, or a group in which everything has the same color."""
 
@@ -203,6 +215,37 @@ class SortItem:
     @property
     def colors(self) -> ColorPair:
         return self.nodes[0].colors[0], self.nodes[-1].colors[-1]
+
+    @property
+    def label(self) -> str:
+        name = self.root.get(INKSCAPE_LABEL) or self.root.get('id')
+        first, last = self.colors
+        if first == last:
+            color_text = color_to_hex(first)
+        else:
+            color_text = f"{color_to_hex(first)} → {color_to_hex(last)}"
+        if name:
+            return f"{name} ({color_text})"
+        return color_text
+
+
+@dataclass
+class ColorSortPlan:
+    """Everything needed to preview and apply a color order."""
+
+    stitched: List[StitchedNode]
+    block: List[SortItem]
+    left_in_place: int
+    first: int
+    staying: List[StitchedNode]
+    before: Optional[StitchedNode]
+    after: Optional[StitchedNode]
+    order: List[int]
+    changes_before: int
+    only_selection: bool
+    selection_active: bool
+    item_count: int
+    must_follow: List[Set[int]]
 
 
 def _element_geometry(element: EmbroideryElement) -> BaseGeometry:
@@ -248,58 +291,195 @@ class ColorSort(InkstitchExtension):
 
     def __init__(self, *args, **kwargs):
         InkstitchExtension.__init__(self, *args, **kwargs)
+        self.cancelled = False
         self.arg_parser.add_argument("--notebook")
         self.arg_parser.add_argument("--keep-overlap-order", type=Boolean, default=True, dest="keep_overlap_order")
         self.arg_parser.add_argument("--add-trims", type=Boolean, default=True, dest="add_trims")
         self.arg_parser.add_argument("--selection-only", type=Boolean, default=False, dest="selection_only")
 
-    def effect(self) -> None:
-        self.tolerance = OVERLAP_TOLERANCE_MM * PIXELS_PER_MM
+    def cancel(self) -> None:
+        self.cancelled = True
 
-        # the whole design in stitching order
+    def effect(self) -> None:
+        """Open the Color Order panel with a live stitch preview."""
+        import sys
+
+        self.tolerance = OVERLAP_TOLERANCE_MM * PIXELS_PER_MM
+        plan = self.prepare_plan()
+        if plan is None:
+            self.no_elements_error()
+            return
+        if plan.selection_active and plan.item_count < 2:
+            errormsg(_("Please select at least two objects to sort by color."))
+            return
+
+        # Lazy-import wx/gui so headless tests can call apply_sort() without wx.
+        import wx
+
+        from ..gui.color_order import ColorOrderPanel
+        from ..gui.simulator import SplitSimulatorWindow
+        from ..utils.svg_data import get_pagecolor
+
+        metadata = self.get_inkstitch_metadata()
+        background_color = get_pagecolor(self.svg.namedview)
+        app = wx.App()
+        frame = SplitSimulatorWindow(
+            title=_("Ink/Stitch Color Order"),
+            panel_class=ColorOrderPanel,
+            extension=self,
+            plan=plan,
+            on_cancel=self.cancel,
+            metadata=metadata,
+            background_color=background_color,
+            target_duration=5
+        )
+        frame.Show()
+        app.MainLoop()
+
+        if self.cancelled:
+            # Prevent writing SVG when the user cancelled; the DOM was not applied.
+            sys.exit(0)
+
+    def apply_sort(self) -> None:
+        """Apply color sorting without opening the Color Order panel (used by tests)."""
+        self.tolerance = OVERLAP_TOLERANCE_MM * PIXELS_PER_MM
+        plan = self.prepare_plan()
+        if plan is None:
+            self.no_elements_error()
+            return
+        if plan.selection_active and plan.item_count < 2:
+            errormsg(_("Please select at least two objects to sort by color."))
+            return
+
+        # Don't touch the design if auto-sort does not reduce thread changes.
+        if len(plan.block) > 1 and self.changes_for_order(plan, plan.order) < plan.changes_before:
+            errormsg(self.apply_plan(plan, plan.order, self.options.add_trims))
+            return
+
+        errormsg(self._status_message(
+            plan.changes_before,
+            self._count_thread_changes(self._stitched_nodes()),
+            plan.left_in_place,
+            0,
+            False,
+            plan.only_selection
+        ))
+
+    def prepare_plan(self, keep_overlap_order: Optional[bool] = None, selection_only: Optional[bool] = None) -> Optional[ColorSortPlan]:
+        """Build a plan for previewing and applying a color order.  None if nothing can be moved."""
+        if not hasattr(self, 'tolerance'):
+            self.tolerance = OVERLAP_TOLERANCE_MM * PIXELS_PER_MM
+        if keep_overlap_order is not None:
+            self.options.keep_overlap_order = keep_overlap_order
+        if selection_only is not None:
+            self.options.selection_only = selection_only
+
         stitched = self._stitched_nodes()
         selected = self._selected_nodes()
         movable = {stitched_node.node for stitched_node in stitched if selected is None or stitched_node.node in selected}
         if not movable:
-            self.no_elements_error()
-            return
+            return None
 
         items = self._items(stitched, movable)
-        if len(items) < 2 and selected is not None:
-            errormsg(_("Please select at least two objects to sort by color."))
-            return
-
+        selection_active = selected is not None
+        only_selection = selection_active and len(movable) < len(stitched)
         changes_before = self._count_thread_changes(stitched)
         block, left_in_place = self._sortable_items(items, stitched)
+
+        if not block:
+            return ColorSortPlan(
+                stitched=stitched,
+                block=[],
+                left_in_place=left_in_place,
+                first=0,
+                staying=list(stitched),
+                before=None,
+                after=None,
+                order=[],
+                changes_before=changes_before,
+                only_selection=only_selection,
+                selection_active=selection_active,
+                item_count=len(items),
+                must_follow=[],
+            )
+
+        block_nodes = {stitched_node.node for item in block for stitched_node in item.nodes}
+        first = block[0].nodes[0].position
+        staying = [stitched_node for stitched_node in stitched[first:] if stitched_node.node not in block_nodes]
+        before = stitched[first - 1] if first > 0 else None
+        after = staying[0] if staying else None
+        must_follow = self._must_follow(block)
+        plan = ColorSortPlan(
+            stitched=stitched,
+            block=block,
+            left_in_place=left_in_place,
+            first=first,
+            staying=staying,
+            before=before,
+            after=after,
+            order=list(range(len(block))),
+            changes_before=changes_before,
+            only_selection=only_selection,
+            selection_active=selection_active,
+            item_count=len(items),
+            must_follow=must_follow,
+        )
+        self.auto_order(plan)
+        return plan
+
+    def auto_order(self, plan: ColorSortPlan) -> List[int]:
+        """Set plan.order to the order with the fewest thread changes."""
+        if len(plan.block) < 2:
+            plan.order = list(range(len(plan.block)))
+            return plan.order
+        plan.order = color_sorted_order(
+            [item.colors for item in plan.block],
+            plan.must_follow,
+            plan.before.colors[-1] if plan.before else None,
+            plan.after.colors[0] if plan.after else None
+        )
+        return plan.order
+
+    def nodes_for_order(self, plan: ColorSortPlan, order: Sequence[int]) -> List[StitchedNode]:
+        """Stitched nodes in the order they would sew after applying this order."""
+        sorted_nodes = [stitched_node for index in order for stitched_node in plan.block[index].nodes]
+        return plan.stitched[:plan.first] + sorted_nodes + plan.staying
+
+    def changes_for_order(self, plan: ColorSortPlan, order: Sequence[int]) -> int:
+        """How many thread changes the whole design would have with this order."""
+        return self._count_thread_changes(self.nodes_for_order(plan, order))
+
+    def elements_for_order(self, plan: ColorSortPlan, order: Sequence[int]) -> List[EmbroideryElement]:
+        """Embroidery elements in preview order, without changing the document."""
+        return [element for stitched_node in self.nodes_for_order(plan, order) for element in stitched_node.elements]
+
+    def apply_plan(self, plan: ColorSortPlan, order: Sequence[int], add_trims: Optional[bool] = None) -> str:
+        """Restack to the given order and return a status message for the user."""
+        if add_trims is None:
+            add_trims = self.options.add_trims
+
         trims = 0
         lettering_split = False
-
-        if len(block) > 1:
-            block_nodes = {stitched_node.node for item in block for stitched_node in item.nodes}
-            first = block[0].nodes[0].position
-            staying = [stitched_node for stitched_node in stitched[first:] if stitched_node.node not in block_nodes]
-            before = stitched[first - 1] if first > 0 else None
-            after = staying[0] if staying else None
-
-            order = color_sorted_order(
-                [item.colors for item in block],
-                self._must_follow(block),
-                before.colors[-1] if before else None,
-                after.colors[0] if after else None
+        if len(plan.block) > 1:
+            sorted_nodes = [stitched_node for index in order for stitched_node in plan.block[index].nodes]
+            if add_trims:
+                trims = self._add_trims(sorted_nodes + plan.staying[:1])
+            block_nodes = {stitched_node.node for item in plan.block for stitched_node in item.nodes}
+            lettering_split = self._restack(
+                plan.block, list(order), {stitched_node.node for stitched_node in plan.stitched} - block_nodes
             )
-            sorted_nodes = [stitched_node for index in order for stitched_node in block[index].nodes]
 
-            # The sorted objects are stitched where the first of them is stitched now.  Don't touch the design if that doesn't help.
-            if self._count_thread_changes(stitched[:first] + sorted_nodes + staying) < changes_before:
-                if self.options.add_trims:
-                    trims = self._add_trims(sorted_nodes + staying[:1])
-                lettering_split = self._restack(block, order, {stitched_node.node for stitched_node in stitched} - block_nodes)
+        return self._status_message(
+            plan.changes_before,
+            self._count_thread_changes(self._stitched_nodes()),
+            plan.left_in_place,
+            trims,
+            lettering_split,
+            plan.only_selection
+        )
 
-        self._report(changes_before, self._count_thread_changes(self._stitched_nodes()), left_in_place, trims, lettering_split,
-                     selected is not None and len(movable) < len(stitched))
-
-    def _report(self, changes_before: int, changes_after: int, left_in_place: int, trims: int, lettering_split: bool,
-                only_selection: bool) -> None:
+    def _status_message(self, changes_before: int, changes_after: int, left_in_place: int, trims: int,
+                        lettering_split: bool, only_selection: bool) -> str:
         message = _("Thread changes before sorting: {before}\nThread changes after sorting: {after}").format(
             before=changes_before, after=changes_after)
         if only_selection:
@@ -311,7 +491,11 @@ class ColorSort(InkstitchExtension):
         if left_in_place:
             message += "\n\n" + _("Objects left in place, because they overlap objects which are not selected "
                                   "or because they are in a clipped group: {count}").format(count=left_in_place)
-        errormsg(message)
+        return message
+
+    def _report(self, changes_before: int, changes_after: int, left_in_place: int, trims: int, lettering_split: bool,
+                only_selection: bool) -> None:
+        errormsg(self._status_message(changes_before, changes_after, left_in_place, trims, lettering_split, only_selection))
 
     def _stitched_nodes(self) -> List[StitchedNode]:
         stitched: List[StitchedNode] = []
