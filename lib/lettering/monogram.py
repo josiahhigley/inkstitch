@@ -6,7 +6,7 @@
 """Monogram helpers for the Release 2 lettering kit (first slice).
 
 Assembles a three-slot monogram into lettering text without depending on wx.
-Center enlargement is stored as a setting stub only; glyph scaling is a follow-up.
+Center enlargement is applied by the Monogram panel after render_text.
 """
 
 from __future__ import annotations
@@ -71,7 +71,6 @@ def default_monogram_settings() -> Dict[str, object]:
         "monogram_left": "",
         "monogram_center": "",
         "monogram_right": "",
-        # Stub only: when True, future work should enlarge the center glyph.
         "monogram_center_enlargement": False,
     }
 
