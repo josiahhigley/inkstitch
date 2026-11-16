@@ -47,6 +47,7 @@ from .lettering_remove_kerning import LetteringRemoveKerning
 from .lettering_set_color_sort_index import LetteringSetColorSortIndex
 from .lettering_svg_font_to_layers import LetteringSvgFontToLayers
 from .letters_to_font import LettersToFont
+from .monogram import Monogram
 from .object_commands import ObjectCommands
 from .object_commands_toggle_visibility import ObjectCommandsToggleVisibility
 from .objects_pane import ObjectsPane
@@ -131,6 +132,7 @@ extensions = [
     LetteringSetColorSortIndex,
     LetteringSvgFontToLayers,
     LettersToFont,
+    Monogram,
     ObjectCommands,
     ObjectCommandsToggleVisibility,
     ObjectsPane,
