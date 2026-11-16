@@ -70,8 +70,6 @@ class ColorOrderPanel(wx.Panel):
             agwStyle=(ulc.ULC_REPORT | ulc.ULC_SINGLE_SEL | ulc.ULC_VRULES |
                       ulc.ULC_HRULES | ulc.ULC_HAS_VARIABLE_ROW_HEIGHT)
         )
-        self.item_list.InsertColumn(0, "", width=SWATCH_SIZE + 12)
-        self.item_list.InsertColumn(1, _("Color run"), width=ulc.ULC_AUTOSIZE_FILL)
         self.item_list.Bind(ulc.EVT_LIST_BEGIN_DRAG, self.on_begin_drag)
         self.item_list.Bind(ulc.EVT_LIST_END_DRAG, self.on_end_drag)
 
@@ -148,7 +146,9 @@ class ColorOrderPanel(wx.Panel):
     def refresh_list(self) -> None:
         selected = self.item_list.GetFirstSelected()
         self.item_list.Freeze()
-        self.item_list.DeleteAllItems()
+        self.item_list.ClearAll()
+        self.item_list.InsertColumn(0, "", width=SWATCH_SIZE + 12)
+        self.item_list.InsertColumn(1, _("Color run"), width=ulc.ULC_AUTOSIZE_FILL)
 
         for row, item_index in enumerate(self.order):
             item = self.plan.block[item_index]
@@ -245,26 +245,25 @@ class ColorOrderPanel(wx.Panel):
             keep_overlap_order=self.keep_overlap_checkbox.GetValue(),
             selection_only=self.selection_only_checkbox.GetValue()
         )
-        if plan is None or (plan.selection_active and plan.item_count < 2) or len(plan.block) < 2:
-            self.plan = plan or self.plan
-            self.order = list(self.plan.order) if plan else []
-            self._initial_order = list(self.order)
+        if plan is None:
+            self.order = []
             self.refresh_list()
             self.update_stats()
             self.update_preview()
-            if plan is None:
-                self._show_warning(_("No embroiderable objects to sort."))
-            elif plan.selection_active and plan.item_count < 2:
-                self._show_warning(_("Please select at least two objects to sort by color."))
+            self._show_warning(_("No embroiderable objects to sort."))
             return
 
-        self._hide_warning()
         self.plan = plan
         self.order = list(plan.order)
         self._initial_order = list(self.order)
         self.refresh_list()
         self.update_stats()
         self.update_preview()
+
+        if plan.selection_active and plan.item_count < 2:
+            self._show_warning(_("Please select at least two objects to sort by color."))
+        else:
+            self._hide_warning()
 
     def update_preview(self, event=None) -> None:
         self.simulator.stop()
