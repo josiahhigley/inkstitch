@@ -39,6 +39,6 @@ class MonogramHelpersTest(TestCase):
         self.assertTrue(settings["monogram_center_enlargement"])
         self.assertEqual(settings["text_align"], 1)
 
-    def test_center_enlargement_stub_default_off(self):
+    def test_center_enlargement_default_off(self):
         settings = default_monogram_settings()
         self.assertFalse(settings["monogram_center_enlargement"])

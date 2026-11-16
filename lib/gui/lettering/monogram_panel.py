@@ -5,6 +5,7 @@
 
 """Monogram panel: thin LetteringPanel wrapper with three initial slots."""
 
+import inkex
 import wx
 
 from ...i18n import _
@@ -13,6 +14,9 @@ from ...lettering.monogram import (apply_monogram_to_settings,
                                    parse_monogram_slots)
 from ...svg.tags import INKSTITCH_LETTERING
 from .main_panel import LetteringPanel
+
+# How much larger the center initial is drawn when enlargement is on.
+CENTER_ENLARGEMENT_FACTOR = 1.35
 
 
 class MonogramPanel(LetteringPanel):
@@ -72,8 +76,7 @@ class MonogramPanel(LetteringPanel):
 
         self.center_enlargement = wx.CheckBox(options, label=_("Enlarge center initial"))
         self.center_enlargement.SetToolTip(_(
-            "Stub for Release 2: when enabled, the center glyph will be drawn larger "
-            "than the side initials. Not applied to stitching yet."
+            "Draw the center initial larger than the side letters (classic monogram look)."
         ))
         self.center_enlargement.Bind(wx.EVT_CHECKBOX, self._on_monogram_changed)
 
@@ -134,6 +137,33 @@ class MonogramPanel(LetteringPanel):
         if self.options_panel.font_glyph_filter.GetValue():
             self.on_filter_changed()
         self.update_preview()
+
+    def update_lettering(self, raise_error=False):
+        super().update_lettering(raise_error=raise_error)
+        if self.settings.get("monogram_center_enlargement"):
+            self._enlarge_center_glyph()
+
+    def _enlarge_center_glyph(self) -> None:
+        """Scale the middle glyph of a 3-letter monogram around its own center."""
+        glyphs = [
+            node for node in self.group.iterdescendants()
+            if node.get("inkstitch:letter-group") == "glyph"
+        ]
+        if len(glyphs) < 3:
+            # One or two initials: enlarge the “center” slot glyph when present.
+            if len(glyphs) == 1 and self.settings.get("monogram_center"):
+                self._scale_glyph(glyphs[0], CENTER_ENLARGEMENT_FACTOR)
+            return
+        self._scale_glyph(glyphs[1], CENTER_ENLARGEMENT_FACTOR)
+
+    @staticmethod
+    def _scale_glyph(glyph_node, factor: float) -> None:
+        bbox = glyph_node.bounding_box()
+        if bbox is None:
+            return
+        cx, cy = bbox.center.x, bbox.center.y
+        scale = inkex.Transform(f"translate({cx},{cy}) scale({factor}) translate({-cx},{-cy})")
+        glyph_node.transform = scale @ inkex.Transform(glyph_node.get("transform"))
 
     def get_preset_suite_name(self):
         return "monogram"
