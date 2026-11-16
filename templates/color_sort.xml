@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension translationdomain="inkstitch" xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Color Order</name>
+    <id>org.{{ id_inkstitch }}.color_sort</id>
+    <param name="extension" type="string" gui-hidden="true">color_sort</param>
+    <effect implements-custom-gui="true" show-stderr="true" needs-live-preview="false">
+        <object-type>all</object-type>
+        <menu-tip>Reorder color runs to reduce thread changes, with a live stitch preview</menu-tip>
+        <effects-menu>
+            <submenu name="{{ menu_inkstitch }}" translatable="no">
+                <submenu name="Edit" />
+            </submenu>
+        </effects-menu>
+    </effect>
+    <script>
+        {{ command_tag | safe }}
+    </script>
+</inkscape-extension>

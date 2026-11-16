@@ -12,11 +12,13 @@ from .auto_satin import AutoSatin
 from .batch_lettering import BatchLettering
 from .break_apart import BreakApart
 from .cleanup import Cleanup
+from .color_sort import ColorSort
 from .commands_scale_symbols import CommandsScaleSymbols
 from .cross_stitch_assistant import CrossStitchAssistant
 from .cut_satin import CutSatin
 from .cutwork_segmentation import CutworkSegmentation
 from .density_map import DensityMap
+from .design_tray import DesignTray
 from .display_stacking_order import DisplayStackingOrder
 from .duplicate_params import DuplicateParams
 from .element_info import ElementInfo
@@ -45,8 +47,10 @@ from .lettering_remove_kerning import LetteringRemoveKerning
 from .lettering_set_color_sort_index import LetteringSetColorSortIndex
 from .lettering_svg_font_to_layers import LetteringSvgFontToLayers
 from .letters_to_font import LettersToFont
+from .monogram import Monogram
 from .object_commands import ObjectCommands
 from .object_commands_toggle_visibility import ObjectCommandsToggleVisibility
+from .objects_pane import ObjectsPane
 from .outline import Outline
 from .output import Output
 from .palette_split_text import PaletteSplitText
@@ -55,6 +59,7 @@ from .params import Params
 from .png_realistic import PngRealistic
 from .png_simple import PngSimple
 from .preferences import Preferences
+from .prepare_pe900 import PreparePe900
 from .print_pdf import Print
 from .redwork import Redwork
 from .remove_duplicated_points import RemoveDuplicatedPoints
@@ -92,11 +97,13 @@ extensions = [
     BatchLettering,
     BreakApart,
     Cleanup,
+    ColorSort,
     CommandsScaleSymbols,
     CrossStitchAssistant,
     CutSatin,
     CutworkSegmentation,
     DensityMap,
+    DesignTray,
     DisplayStackingOrder,
     DuplicateParams,
     ElementInfo,
@@ -125,8 +132,10 @@ extensions = [
     LetteringSetColorSortIndex,
     LetteringSvgFontToLayers,
     LettersToFont,
+    Monogram,
     ObjectCommands,
     ObjectCommandsToggleVisibility,
+    ObjectsPane,
     Outline,
     Output,
     PaletteSplitText,
@@ -135,6 +144,7 @@ extensions = [
     PngRealistic,
     PngSimple,
     Preferences,
+    PreparePe900,
     Print,
     Redwork,
     RemoveDuplicatedPoints,

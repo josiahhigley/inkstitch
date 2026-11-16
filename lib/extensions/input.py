@@ -12,7 +12,7 @@ from lxml import etree
 from ..i18n import _
 from ..metadata import InkStitchMetadata
 from ..stitch_plan import generate_stitch_plan
-from ..update import INKSTITCH_SVG_VERSION
+from ..update import INKSTITCH_SVG_VERSION, mark_elements_as_current
 
 
 class Input(object):
@@ -28,6 +28,8 @@ class Input(object):
         # Set SVG Version so we do request the user to update the document later on
         metadata = InkStitchMetadata(stitch_plan)
         metadata['inkstitch_svg_version'] = INKSTITCH_SVG_VERSION
+        # The metadata gets lost when the design is imported into an other document (File > Import).
+        mark_elements_as_current(stitch_plan)
 
         out = etree.tostring(stitch_plan).decode('utf-8')
         if platform == "win32":

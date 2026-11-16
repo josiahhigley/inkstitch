@@ -10,9 +10,11 @@
                    gui-description="Installs some default thread color palettes.">true</param>
             <param name="install-symbol-libraries" type="boolean" gui-text="Install symbol libraries"
                    gui-description="Installs symbol libraries with reusable motifs for embroidery">true</param>
+            <param name="install-templates" type="boolean" gui-text="Install hoop templates"
+                   gui-description="Installs document templates which show the stitch area of a hoop (File > New from Template). Ink/Stitch warns when a design which is saved as an embroidery file is outside of the hoop.">true</param>
         </page>
         <page name="info" gui-text="Help">
-            <label>Installs color palettes or a motif stitch symbol library into Inkscape.</label>
+            <label>Installs color palettes, a motif stitch symbol library or hoop templates into Inkscape.</label>
             <label>Please restart Inkscape after the installation is complete.</label>
             <spacer />
             <label>More information on our website</label>
@@ -23,7 +25,7 @@
     <effect needs-live-preview="false">
         <object-type>all</object-type>
         <icon>{{ icon_path }}inx/color_management.svg</icon>
-        <menu-tip>Installs color palettes or a symbol library for motif stitches into Inkscape</menu-tip>
+        <menu-tip>Installs color palettes, a symbol library for motif stitches or hoop templates into Inkscape</menu-tip>
         <effects-menu>
             <submenu name="{{ menu_inkstitch }}" translatable="no" />
         </effects-menu>

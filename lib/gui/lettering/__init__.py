@@ -6,3 +6,4 @@
 from .help_panel import LetteringHelpPanel
 from .option_panel import LetteringOptionsPanel
 from .main_panel import LetteringPanel
+from .monogram_panel import MonogramPanel
